@@ -36,6 +36,7 @@ def get_db():
     Returns:
         sqlalchemy.orm.session.Session: The database session.
     """
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         yield db
