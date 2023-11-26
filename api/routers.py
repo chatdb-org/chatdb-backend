@@ -6,10 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .database import get_db
-from .schemas import Message
 
-from .assistant import (
-    assistant_id,
+from .assistant import assistant_id
+from .services import (
     start_new_thread,
     get_thread,
     get_all_threads,
@@ -53,7 +52,7 @@ def get_chat_session(chat_id: str, db: Session = Depends(get_db)):
 
 # An endpoint to send a message
 @router.post("/chat/{chat_id}")
-def send_chat_message(chat_id: str, message: Message, db: Session = Depends(get_db)):
+def send_chat_message(chat_id: str, message: str, db: Session = Depends(get_db)):
     """ Send a message. """
     try:
         response = send_message(db, chat_id, message)
