@@ -4,6 +4,7 @@ import time
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from .assistant import client, assistant_id
+from .responses import CustomResponse
 
 
 def parse_json(obj):
@@ -24,7 +25,9 @@ def wait_on_run(run, thread_id):
 def start_new_thread(db: Session):
     """ Start a new chat session. """
     thread = client.beta.threads.create()
-    return {"thread_id": parse_json(thread)}
+    message = send_message(db, thread.id, "Hello ChatDB, Start a Conversation")
+    return message
+
 
 def get_all_threads(db: Session):
     """ Get all chat sessions. """
@@ -45,7 +48,7 @@ def send_message(db: Session, chat_id: str, message: str):
     run = client.beta.threads.runs.create(
         thread_id=chat_id,
         assistant_id=assistant_id,
-        instructions="Please carefully respond to the user and provide them a very satisfactory response. The user has a premium account."
+        instructions="Please carefully respond to the user and provide them a very satisfactory response. The user has a premium account  His name is Destiny, give two response, one to greet and the other to asi them to engage"
     )
 
     run = wait_on_run(run, chat_id)
@@ -54,7 +57,17 @@ def send_message(db: Session, chat_id: str, message: str):
         messages = client.beta.threads.messages.list(
             thread_id=chat_id,
         )
-        return {"messages": parse_json(messages)}
+        message = messages.data[0].content[0].text.value
+        return CustomResponse(
+            status_code=200,
+            message="success",
+            data={
+                "chat_id": chat_id,
+                "message_id": messages.data[0].id,
+                "message": message,
+            }
+
+        )
     else:
         return {"messages": "error"}
 
