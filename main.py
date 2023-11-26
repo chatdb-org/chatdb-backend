@@ -1,5 +1,5 @@
 import uvicorn
-from app import ChatDB
+from api import ChatDB
 
 app = ChatDB()
 if __name__ == "__main__":
