@@ -6,30 +6,58 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .database import get_db
-from .models import ChatSession, Message
+from .schemas import Message
+
+from .assistant import (
+    assistant_id,
+    start_new_thread,
+    get_thread,
+    get_all_threads,
+    send_message,
+)
 
 router = APIRouter()
 
+# An endpoint to start a new chat session
+@router.post("/chat")
+def start_chat_session(db: Session = Depends(get_db)):
+    """ Start a new chat session. """
+    try:
+        response = start_new_thread(db)
+        return response
+    except Exception as e:
+        raise e
 
-@router.get("/chat_session")
+
+# An endpoint to get all chat sessions
+@router.get("/chat")
 def get_chat_sessions(db: Session = Depends(get_db)):
-    """Get all chat sessions."""
-    return db.query(ChatSession).all()
+    """ Get all chat sessions. """
+    try:
+        response = get_all_threads(db)
+        return response
+    except Exception as e:
+        raise e
 
 
-@router.get("/chat_session/{chat_session_id}")
-def get_chat_session(chat_session_id: int, db: Session = Depends(get_db)):
-    """Get a chat session by id."""
-    chat_session = (
-        db.query(ChatSession).filter(ChatSession.id == chat_session_id).first()
-    )
-    if not chat_session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Chat session not found"
-        )
-    return chat_session
+# An endpoint to get a chat session
+@router.get("/chat/{chat_id}")
+def get_chat_session(chat_id: str, db: Session = Depends(get_db)):
+    """ Get a chat session. """
+    try:
+        response = get_thread(db, chat_id)
+        return response
+    except Exception as e:
+        raise e
 
 
-# send a message
+# An endpoint to send a message
+@router.post("/chat/{chat_id}")
+def send_chat_message(chat_id: str, message: Message, db: Session = Depends(get_db)):
+    """ Send a message. """
+    try:
+        response = send_message(db, chat_id, message)
+        return response
+    except Exception as e:
+        raise e
 

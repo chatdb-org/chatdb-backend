@@ -1,110 +1,65 @@
-""" This file is used to initialize the AI module """
+import openai
+import time
 
-# pylint: disable=import-error
-from openai import OpenAI
+# Initialize the client
+client = openai.OpenAI()
 
-client = OpenAI()
-assistant = client.beta.assistants.create(
-    name="Database Assistant",
-    instructions="""
-    	You are to retrieve relevant information from the Database using natural language queries. Enable users to effortlessly interact with the database by asking questions like 'What are the top-selling items?' or 'Show me product reviews with 4 stars or above.' Make the system user-friendly for non-tech folks, bridging the gap between complex data and a smooth, intuitive experience. Here is the database data:
-		+--------------+------------------------+------------+-------------+-----------------------+------------------------+
-		| TABLE_NAME   | COLUMN_NAME            | DATA_TYPE  | IS_NULLABLE | REFERENCED_TABLE_NAME | REFERENCED_COLUMN_NAME |
-		+--------------+------------------------+------------+-------------+-----------------------+------------------------+
-		| customers    | addressLine1           | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | addressLine2           | varchar    | YES         | NULL                  | NULL                   |
-		| customers    | city                   | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | contactFirstName       | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | contactLastName        | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | country                | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | creditLimit            | decimal    | YES         | NULL                  | NULL                   |
-		| customers    | customerName           | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | customerNumber         | int        | NO          | NULL                  | NULL                   |
-		| customers    | phone                  | varchar    | NO          | NULL                  | NULL                   |
-		| customers    | postalCode             | varchar    | YES         | NULL                  | NULL                   |
-		| customers    | salesRepEmployeeNumber | int        | YES         | employees             | employeeNumber         |
-		| customers    | state                  | varchar    | YES         | NULL                  | NULL                   |
-		| employees    | email                  | varchar    | NO          | NULL                  | NULL                   |
-		| employees    | employeeNumber         | int        | NO          | NULL                  | NULL                   |
-		| employees    | extension              | varchar    | NO          | NULL                  | NULL                   |
-		| employees    | firstName              | varchar    | NO          | NULL                  | NULL                   |
-		| employees    | jobTitle               | varchar    | NO          | NULL                  | NULL                   |
-		| employees    | lastName               | varchar    | NO          | NULL                  | NULL                   |
-		| employees    | officeCode             | varchar    | NO          | offices               | officeCode             |
-		| employees    | reportsTo              | int        | YES         | employees             | employeeNumber         |
-		| offices      | addressLine1           | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | addressLine2           | varchar    | YES         | NULL                  | NULL                   |
-		| offices      | city                   | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | country                | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | officeCode             | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | phone                  | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | postalCode             | varchar    | NO          | NULL                  | NULL                   |
-		| offices      | state                  | varchar    | YES         | NULL                  | NULL                   |
-		| offices      | territory              | varchar    | NO          | NULL                  | NULL                   |
-		| orderdetails | orderLineNumber        | smallint   | NO          | NULL                  | NULL                   |
-		| orderdetails | orderNumber            | int        | NO          | NULL                  | NULL                   |
-		| orderdetails | orderNumber            | int        | NO          | orders                | orderNumber            |
-		| orderdetails | priceEach              | decimal    | NO          | NULL                  | NULL                   |
-		| orderdetails | productCode            | varchar    | NO          | NULL                  | NULL                   |
-		| orderdetails | productCode            | varchar    | NO          | products              | productCode            |
-		| orderdetails | quantityOrdered        | int        | NO          | NULL                  | NULL                   |
-		| orders       | comments               | text       | YES         | NULL                  | NULL                   |
-		| orders       | customerNumber         | int        | NO          | customers             | customerNumber         |
-		| orders       | orderDate              | date       | NO          | NULL                  | NULL                   |
-		| orders       | orderNumber            | int        | NO          | NULL                  | NULL                   |
-		| orders       | requiredDate           | date       | NO          | NULL                  | NULL                   |
-		| orders       | shippedDate            | date       | YES         | NULL                  | NULL                   |
-		| orders       | status                 | varchar    | NO          | NULL                  | NULL                   |
-		| payments     | amount                 | decimal    | NO          | NULL                  | NULL                   |
-		| payments     | checkNumber            | varchar    | NO          | NULL                  | NULL                   |
-		| payments     | customerNumber         | int        | NO          | NULL                  | NULL                   |
-		| payments     | customerNumber         | int        | NO          | customers             | customerNumber         |
-		| payments     | paymentDate            | date       | NO          | NULL                  | NULL                   |
-		| productlines | htmlDescription        | mediumtext | YES         | NULL                  | NULL                   |
-		| productlines | image                  | mediumblob | YES         | NULL                  | NULL                   |
-		| productlines | productLine            | varchar    | NO          | NULL                  | NULL                   |
-		| productlines | textDescription        | varchar    | YES         | NULL                  | NULL                   |
-		| products     | buyPrice               | decimal    | NO          | NULL                  | NULL                   |
-		| products     | MSRP                   | decimal    | NO          | NULL                  | NULL                   |
-		| products     | productCode            | varchar    | NO          | NULL                  | NULL                   |
-		| products     | productDescription     | text       | NO          | NULL                  | NULL                   |
-		| products     | productLine            | varchar    | NO          | productlines          | productLine            |
-		| products     | productName            | varchar    | NO          | NULL                  | NULL                   |
-		| products     | productScale           | varchar    | NO          | NULL                  | NULL                   |
-		| products     | productVendor          | varchar    | NO          | NULL                  | NULL                   |
-		| products     | quantityInStock        | smallint   | NO          | NULL                  | NULL                   |
-		+--------------+------------------------+------------+-------------+-----------------------+------------------------+
-		62 rows in set (0.219 sec)
-    """,
-    tools=[{"type": "code_interpreter"}],
-    model="gpt-4-1106-preview",
+file = client.files.create(
+    file=open("songs.csv", "rb"),
+    purpose='assistants'
 )
 
+# Step 1: Create an Assistant
+assistant = client.beta.assistants.create(
+    name="Data Analyst Assistant",
+    instructions="You are a personal Data Analyst Assistant",
+    model="gpt-4-1106-preview",
+    tools=[{"type": "code_interpreter"}],
+    file_ids=[file.id]
+)
+
+# Step 2: Create a Thread
 thread = client.beta.threads.create()
 
+# Step 3: Add a Message to a Thread
 message = client.beta.threads.messages.create(
     thread_id=thread.id,
-	role='user',
-	content="What are the top-selling items?"
+    role="user",
+    content="What are the most popular tracks and their artists?"
 )
 
+# Step 4: Run the Assistant
 run = client.beta.threads.runs.create(
     thread_id=thread.id,
-	assistant_id=assistant.id,
-	instructions="Provide a SQL query that addresses the user's question.",
+    assistant_id=assistant.id,
+    instructions="What are the most popular tracks and their artists?"
 )
 
-run_status = client.beta.threads.runs.retrieve(
-    thread_id=thread.id,
-	run_id=run.id,
-)
+print(run.model_dump_json(indent=4))
 
-if run_status.status == "completed":
-	messages = client.beta.thread.messages.list(
-		thread_id=thread.id,
-	)
-	
-	for message in messages:
-		role = message.role
-		content = message.content
-		print(role, content)
+while True:
+    # Wait for 5 seconds
+    time.sleep(5)
+
+    # Retrieve the run status
+    run_status = client.beta.threads.runs.retrieve(
+        thread_id=thread.id,
+        run_id=run.id
+    )
+    print(run_status.model_dump_json(indent=4))
+
+    # If run is completed, get messages
+    if run_status.status == 'completed':
+        messages = client.beta.threads.messages.list(
+            thread_id=thread.id
+        )
+
+        # Loop through messages and print content based on role
+        for msg in messages.data:
+            role = msg.role
+            content = msg.content[0].text.value
+            print(f"{role.capitalize()}: {content}")
+        break
+    else:
+        print("Waiting for the Assistant to process...")
+        time.sleep(5)
