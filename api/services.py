@@ -110,7 +110,7 @@ def get_thread(db: Session, chat_id: str):
 
 def send_message(db: Session, chat_id: str, sender: str, message: str):
     """ Send a message. """
-    message = client.beta.threads.messages.create(
+    run_message = client.beta.threads.messages.create(
         thread_id=chat_id,
         role="user",
         content=message
@@ -121,43 +121,49 @@ def send_message(db: Session, chat_id: str, sender: str, message: str):
         assistant_id=assistant_id,
         instructions="Please carefully respond to the user and provide them a very satisfactory response"
     )
+    
+    db_chat= db.query(Chat).filter(Chat.id == chat_id).first()
+    if not db_chat:
+        db_chat = Chat(
+                id=chat_id,
+                title="New Chat",
+            )
+        db.add(db_chat)
+    else:
+        if db_chat.title == "New Chat":
+            db_chat.title = generate_title(message)
+            db.add(db_chat)
+        sender_message = Message(
+            chat_id=chat_id,
+            sender=sender,
+            content=message
+        )
+        db.add(sender_message)
+        db.commit()
     run = wait_on_run(run, chat_id)
 
     if run.status == 'completed':
         messages = client.beta.threads.messages.list(
             thread_id=chat_id,
         )
-        message = messages.data[0].content[0].text.value
-
-        db_chat= db.query(Chat).filter(Chat.id == chat_id).first()
-        if not db_chat:
-            db_chat = Chat(
-                    id=chat_id,
-                    title="New Chat",
-                )
-            db.add(db_chat)
-        else:
-            if db_chat.title == "New Chat":
-                db_chat.title = generate_title(message)
-                db.add(db_chat)
+        result = messages.data[0].content[0].text.value
 
         db_message = Message(
                 id=messages.data[0].id,
                 chat_id=chat_id,
                 sender=sender,
-                content=message
+                content=result
             )
         db.add(db_message)
         db.commit()
         db.refresh(db_chat)
         return CustomResponse(
             status_code=200,
-            message="success",
             data={
                 "chat_id": chat_id,
                 "message_id": db_message.id,
                 'title': db_chat.title,
-                "message": message,
+                "message": result,
             }
 
         )
