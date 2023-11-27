@@ -1,27 +1,28 @@
 """ This module contains the database models. """
 
 # pylint: disable=import-error
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from .database import Base
 
 
-class ChatSession(Base):
+class Chat(Base):
     """ This class represents the chat session table. """
-    __tablename__ = 'chat_session'
+    __tablename__ = 'chat'
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(255), primary_key=True)
     title = Column(String(255))
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 
 class Message(Base):
     """ This class represents the message table. """
     __tablename__ = 'message'
 
-    id = Column(Integer, primary_key=True, index=True)
-    chat_session_id = Column(Integer, ForeignKey('chat_session.id'))
-    sender_id = Column(String(255))
-    message = Column(String(1000))
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    id = Column(String(255), primary_key=True)
+    chat_id = Column(Integer, ForeignKey('chat.id'))
+    sender = Column(String(255))
+    content = Column(String(1000))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)

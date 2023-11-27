@@ -55,7 +55,7 @@ def get_chat_session(chat_id: str, db: Session = Depends(get_db)):
 def send_chat_message(chat_id: str, message: str, db: Session = Depends(get_db)):
     """ Send a message. """
     try:
-        response = send_message(db, chat_id, message)
+        response = send_message(db, chat_id, "user", message)
         return response
     except Exception as e:
         raise e
