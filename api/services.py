@@ -8,6 +8,7 @@ from .responses import CustomResponse, CustomException
 from .models import Chat, Message
 
 from datetime import datetime
+from uuid import uuid4
 from typing import Any, Dict, List
 
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -119,7 +120,7 @@ def send_message(db: Session, chat_id: str, sender: str, message: str):
     run = client.beta.threads.runs.create(
         thread_id=chat_id,
         assistant_id=assistant_id,
-        instructions="Please carefully respond to the user and provide them a very satisfactory response"
+        instructions="Hey ChatDB, let's focus on the database. Respond to user queries using the information from the uploaded CSV file, discussing tables, columns, and relationships. If asked about names or identity, refer to yourself as ChatDB. Encourage users to explore more about the database. Keep it engaging and informative!"
     )
     
     db_chat= db.query(Chat).filter(Chat.id == chat_id).first()
@@ -134,6 +135,7 @@ def send_message(db: Session, chat_id: str, sender: str, message: str):
             db_chat.title = generate_title(message)
             db.add(db_chat)
         sender_message = Message(
+            id=run_message.id,
             chat_id=chat_id,
             sender=sender,
             content=message
